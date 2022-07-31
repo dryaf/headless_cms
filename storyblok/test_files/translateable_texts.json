@@ -1,0 +1,63 @@
+{
+    "story": {
+        "name": "cms_translatable_texts",
+        "created_at": "2022-07-31T15:12:04.650Z",
+        "published_at": null,
+        "id": 170000778,
+        "uuid": "c70cadc8-68c3-44c3-9407-6dfd30881e9d",
+        "content": {
+            "_uid": "771e3091-f830-49df-8343-bdf501bc5512",
+            "body": [
+                {
+                    "id": "text1",
+                    "_uid": "2dd98680-9f27-46a9-8a25-9f877b7c43e6",
+                    "value": "Hallo",
+                    "component": "_translatable_text",
+                    "_editable": "\u003c!--#storyblok#{\"name\": \"_translatable_text\", \"space\": \"168864\", \"uid\": \"2dd98680-9f27-46a9-8a25-9f877b7c43e6\", \"id\": \"170000778\"}--\u003e"
+                },
+                {
+                    "id": "text2",
+                    "_uid": "7b6f15e3-487a-46d3-9b58-1092f6c28f30",
+                    "value": "Onkel",
+                    "component": "_translatable_text",
+                    "_editable": "\u003c!--#storyblok#{\"name\": \"_translatable_text\", \"space\": \"168864\", \"uid\": \"7b6f15e3-487a-46d3-9b58-1092f6c28f30\", \"id\": \"170000778\"}--\u003e"
+                },
+                {
+                    "id": "text3",
+                    "_uid": "b232e357-91c6-48e0-bb2a-eafd35db422c",
+                    "value": "Bob",
+                    "component": "_translatable_text",
+                    "_editable": "\u003c!--#storyblok#{\"name\": \"_translatable_text\", \"space\": \"168864\", \"uid\": \"b232e357-91c6-48e0-bb2a-eafd35db422c\", \"id\": \"170000778\"}--\u003e"
+                },
+                {
+                    "id": "text4",
+                    "_uid": "3940f0a8-7e0a-4d02-8d83-e9758a0069a7",
+                    "value": "Toller Tag heute oder?",
+                    "component": "_translatable_text",
+                    "_editable": "\u003c!--#storyblok#{\"name\": \"_translatable_text\", \"space\": \"168864\", \"uid\": \"3940f0a8-7e0a-4d02-8d83-e9758a0069a7\", \"id\": \"170000778\"}--\u003e"
+                }
+            ],
+            "component": "page",
+            "_editable": "\u003c!--#storyblok#{\"name\": \"page\", \"space\": \"168864\", \"uid\": \"771e3091-f830-49df-8343-bdf501bc5512\", \"id\": \"170000778\"}--\u003e"
+        },
+        "slug": "home",
+        "full_slug": "home",
+        "sort_by_date": null,
+        "position": 0,
+        "tag_list": [],
+        "is_startpage": false,
+        "parent_id": 0,
+        "meta_data": null,
+        "group_id": "103009c4-cc1a-4a1a-8675-7ecaa8e19f5b",
+        "first_published_at": null,
+        "release_id": null,
+        "lang": "default",
+        "path": null,
+        "alternates": [],
+        "default_full_slug": null,
+        "translated_slugs": null
+    },
+    "cv": 1659280457,
+    "rels": [],
+    "links": []
+}
