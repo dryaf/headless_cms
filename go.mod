@@ -1,3 +1,3 @@
 module github.com/dryaf/headless_cms
 
-go 1.18
+go 1.20

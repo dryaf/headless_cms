@@ -3,8 +3,8 @@ package storyblok
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -85,28 +85,29 @@ func (c *Client) RequestJSON(page string, version string, language string) (json
 	}
 
 	// Remote CMS
-	log.Default().Println("--- storyblok-call: " + c.api_url + url_params + "&token=" + c.token)
-	req, err := http.NewRequest("GET", c.api_url+url_params+"&token="+c.token, nil)
+	//log.Default().Println("--- storyblok-call: " + c.api_url + url_params + "&token=" + c.token)
+	reqURL := c.api_url + url_params + "&token=" + c.token
+	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
-		return nil, errors.New("error: " + url_params + err.Error())
+		return nil, fmt.Errorf("headless_cms: %s: %w", reqURL, err)
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("headless_cms: %s: resp: %w", reqURL, err)
 	}
 	if resp.StatusCode == 404 {
 		c.cache_json[url_params] = nil
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.New(statusCodes[resp.StatusCode])
+		return nil, fmt.Errorf("headless_cms: %s: status: %d err: %w", reqURL, resp.StatusCode, errors.New(statusCodes[resp.StatusCode]))
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.New("error: " + url_params + err.Error())
+		return nil, fmt.Errorf("headless_cms: %s: readBody: %w", reqURL, err)
 	}
 
 	// Cache - Write
@@ -129,12 +130,12 @@ func (c *Client) RequestTranslatableTexts(page string, version string, language 
 
 	jsonResp, err := c.RequestJSON(page, version, language)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("headless_cms: %s: request_json: %w", url_params, err)
 	}
 	storyblokPage := &StoryWithTranslatableTextsOnly{}
 	err = json.Unmarshal(jsonResp, storyblokPage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("headless_cms: %s: json_unmarshal: %w", url_params, err)
 	}
 	texts = map[string]string{}
 	for _, tt := range storyblokPage.Story.Content.Body {
@@ -164,12 +165,12 @@ func (c *Client) Request(page string, version string, language string) (cmsData 
 
 	jsonResp, err := c.RequestJSON(page, version, language)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("headless_cms: %s: request_json: %w", url_params, err)
 	}
 	cmsData = map[string]any{}
 	err = json.Unmarshal(jsonResp, &cmsData)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("headless_cms: %s: json_unmarshal: %w", url_params, err)
 	}
 
 	// Cache - Write
@@ -188,6 +189,6 @@ func (c *Client) generateQuery(page, version, language string) string {
 	if language != "" {
 		url_params = url_params + "&language=" + language
 	}
-	log.Default().Println("url_params", url_params)
+	//log.Default().Println("url_params", url_params)
 	return url_params
 }
