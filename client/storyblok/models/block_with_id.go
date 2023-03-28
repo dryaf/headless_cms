@@ -1,25 +1,18 @@
-package storyblok
+package models
 
 import "time"
 
-type StoryWithTranslatableTextsOnly struct {
+type SimpleBlocskWithID struct {
 	Story struct {
-		Name        string      `json:"name"`
-		CreatedAt   time.Time   `json:"created_at"`
-		PublishedAt interface{} `json:"published_at"`
-		ID          int         `json:"id"`
-		UUID        string      `json:"uuid"`
+		Name        string    `json:"name"`
+		CreatedAt   time.Time `json:"created_at"`
+		PublishedAt time.Time `json:"published_at"`
+		ID          int       `json:"id"`
+		UUID        string    `json:"uuid"`
 		Content     struct {
-			UID  string `json:"_uid"`
-			Body []struct {
-				ID        string `json:"id"`
-				UID       string `json:"_uid"`
-				Value     string `json:"value"`
-				Component string `json:"component"`
-				Editable  string `json:"_editable"`
-			} `json:"body"`
-			Component string `json:"component"`
-			Editable  string `json:"_editable"`
+			UID       string           `json:"_uid"`
+			Body      []map[string]any `json:"body"`
+			Component string           `json:"component"`
 		} `json:"content"`
 		Slug             string        `json:"slug"`
 		FullSlug         string        `json:"full_slug"`
@@ -27,10 +20,10 @@ type StoryWithTranslatableTextsOnly struct {
 		Position         int           `json:"position"`
 		TagList          []interface{} `json:"tag_list"`
 		IsStartpage      bool          `json:"is_startpage"`
-		ParentID         int           `json:"parent_id"`
+		ParentID         interface{}   `json:"parent_id"`
 		MetaData         interface{}   `json:"meta_data"`
 		GroupID          string        `json:"group_id"`
-		FirstPublishedAt interface{}   `json:"first_published_at"`
+		FirstPublishedAt time.Time     `json:"first_published_at"`
 		ReleaseID        interface{}   `json:"release_id"`
 		Lang             string        `json:"lang"`
 		Path             interface{}   `json:"path"`
