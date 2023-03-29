@@ -1,4 +1,4 @@
-package cache
+package headless_cms
 
 type Cache interface {
 	Get(key string) (any, error)

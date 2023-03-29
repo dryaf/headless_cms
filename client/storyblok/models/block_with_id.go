@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type SimpleBlocskWithID struct {
+type SimpleBlockskWithID struct {
 	Story struct {
 		Name        string    `json:"name"`
 		CreatedAt   time.Time `json:"created_at"`
