@@ -1,8 +1,12 @@
 package headless_cms
 
+import (
+	"context"
+)
+
 type Cache interface {
-	Get(key string) (any, error)
-	Set(key string, obj any) error
-	Del(key string) error
-	Empty() error
+	Get(ctx context.Context, key string) ([]byte, error)
+	Set(ctx context.Context, key string, bytes []byte) error
+	Del(ctx context.Context, key string) error
+	Empty(ctx context.Context) error
 }

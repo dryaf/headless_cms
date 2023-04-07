@@ -10,7 +10,6 @@ import (
 
 type Cache struct {
 	client *redis.Client
-	ctx    context.Context
 }
 
 func New(addr, password string, db int) headless_cms.Cache {
@@ -19,9 +18,8 @@ func New(addr, password string, db int) headless_cms.Cache {
 		Password: password,
 		DB:       db,
 	})
-	ctx := context.Background()
 
-	return &Cache{client: client, ctx: ctx}
+	return &Cache{client: client}
 }
 
 func NewFailover(sentinelAddrs []string, masterName, password string, db int) headless_cms.Cache {
@@ -31,37 +29,36 @@ func NewFailover(sentinelAddrs []string, masterName, password string, db int) he
 		Password:      password,
 		DB:            db,
 	})
-	ctx := context.Background()
-	return &Cache{client: client, ctx: ctx}
+	return &Cache{client: client}
 }
 
-func (mc *Cache) Get(key string) (interface{}, error) {
-	value, err := mc.client.Get(mc.ctx, key).Result()
+func (mc *Cache) Get(ctx context.Context, key string) ([]byte, error) {
+	value, err := mc.client.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return nil, errors.New("key not found")
 	} else if err != nil {
 		return nil, err
 	}
-	return value, nil
+	return []byte(value), nil
 }
 
-func (mc *Cache) Set(key string, obj interface{}) error {
-	err := mc.client.Set(mc.ctx, key, obj, 0).Err()
+func (mc *Cache) Set(ctx context.Context, key string, bytes []byte) error {
+	err := mc.client.Set(ctx, key, bytes, 0).Err()
 	return err
 }
 
-func (mc *Cache) Del(key string) error {
-	err := mc.client.Del(mc.ctx, key).Err()
+func (mc *Cache) Del(ctx context.Context, key string) error {
+	err := mc.client.Del(ctx, key).Err()
 	return err
 }
 
-func (mc *Cache) Empty() error {
-	keys, err := mc.client.Keys(mc.ctx, "*").Result()
+func (mc *Cache) Empty(ctx context.Context) error {
+	keys, err := mc.client.Keys(ctx, "*").Result()
 	if err != nil {
 		return err
 	}
 	if len(keys) > 0 {
-		err = mc.client.Del(mc.ctx, keys...).Err()
+		err = mc.client.Del(ctx, keys...).Err()
 	}
 	return err
 }

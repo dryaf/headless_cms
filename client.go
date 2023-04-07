@@ -1,10 +1,12 @@
 package headless_cms
 
-type Client interface {
-	EmptyCache(user_input_token string) error
+import "context"
 
-	Request(page string, version string, language string) (map[string]any, error)
-	RequestJSON(page string, version string, language string) ([]byte, error)
-	RequestTranslatableTexts(page string, version string, language string) (map[string]string, error)
-	RequestSimpleBlocksWithID(page string, version string, language string) (map[string]any, error)
+type Client interface {
+	EmptyCache(ctx context.Context, user_input_token string) error
+
+	Request(ctx context.Context, page string, version string, language string) (map[string]any, error)
+	RequestJSON(ctx context.Context, page string, version string, language string) ([]byte, error)
+	RequestTranslatableTexts(ctx context.Context, page string, version string, language string) (map[string]string, error)
+	RequestSimpleBlocksWithID(ctx context.Context, page string, version string, language string) (map[string]any, error)
 }

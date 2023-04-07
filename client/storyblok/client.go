@@ -1,6 +1,7 @@
 package storyblok
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -55,11 +56,11 @@ func (c *Client) Cache() headless_cms.Cache {
 	return c.cache
 }
 
-func (c *Client) EmptyCache(user_input_token string) error {
+func (c *Client) EmptyCache(ctx context.Context, user_input_token string) error {
 	if user_input_token != c.cacheEmptyActionToken {
 		return errors.New("token incorrect")
 	}
-	return c.cache.Empty()
+	return c.cache.Empty(ctx)
 }
 
 func (c *Client) EmptyCacheToken() string {
@@ -67,22 +68,16 @@ func (c *Client) EmptyCacheToken() string {
 }
 
 // RequestJSON story for example /login or "" for getting all stories
-func (c *Client) RequestJSON(page string, version string, language string) ([]byte, error) {
+func (c *Client) RequestJSON(ctx context.Context, page string, version string, language string) ([]byte, error) {
 	cacheKey := c.CacheKey("j", page, version, language)
 
 	// Cache read
 	if c.cache != nil && version != c.versionWhereCacheIgnored {
-		obj, cacheErr := c.cache.Get(cacheKey)
+		obj, cacheErr := c.cache.Get(ctx, cacheKey)
 		if cacheErr != nil {
 			slog.Warn("storyblok", "cache.Get error", "url_params", cacheKey, "err", cacheErr)
 		} else {
-			if obj != nil {
-				jsonResp, ok := obj.([]byte)
-				if ok {
-					return jsonResp, nil
-				}
-				slog.Warn("storyblok", "cache object not []byte type", "url_params", cacheKey, "obj", obj)
-			}
+			return obj, nil
 		}
 
 	}
@@ -112,37 +107,33 @@ func (c *Client) RequestJSON(page string, version string, language string) ([]by
 
 	// Cache - Write
 	if c.cache != nil && version != c.versionWhereCacheIgnored {
-		err = c.cache.Set(cacheKey, body)
+		err = c.cache.Set(ctx, cacheKey, body)
 	}
 	return body, err
 }
 
-func (c *Client) Request(page string, version string, language string) (map[string]any, error) {
+func (c *Client) Request(ctx context.Context, page string, version string, language string) (map[string]any, error) {
 	cacheKey := c.CacheKey("r", page, version, language)
 	cmsData := map[string]any{}
 
 	// Cache - Read
 	if c.cache != nil && version != c.versionWhereCacheIgnored {
-		obj, cacheErr := c.cache.Get(cacheKey)
+		obj, cacheErr := c.cache.Get(ctx, cacheKey)
 		if cacheErr != nil {
 			slog.Warn("storyblok", "cache.Get error", "url_params", cacheKey, "err", cacheErr)
 		} else {
 			if obj != nil {
-				jsonFromCache, ok := obj.([]byte)
-				if ok {
-					err := json.Unmarshal(jsonFromCache, &cmsData)
-					if err != nil {
-						slog.Error("storyblok", "cache object not map[string]interface{}", "url_params", cacheKey, "obj", obj)
-					} else {
-						return cmsData, nil
-					}
+				err := json.Unmarshal(obj, &cmsData)
+				if err != nil {
+					slog.Error("storyblok", "cache object not map[string]interface{}", "url_params", cacheKey, "obj", obj)
+				} else {
+					return cmsData, nil
 				}
-				slog.Warn("storyblok", "cache object not map[string]interface{}", "url_params", cacheKey, "obj", obj)
 			}
 		}
 	}
 
-	jsonResp, err := c.RequestJSON(page, version, language)
+	jsonResp, err := c.RequestJSON(ctx, page, version, language)
 	if err != nil {
 		return nil, fmt.Errorf("headless_cms: %s: request_json: %w", cacheKey, err)
 	}
@@ -158,7 +149,7 @@ func (c *Client) Request(page string, version string, language string) (map[stri
 		if err != nil {
 			slog.Error("json marshal", "err", err, "key", cacheKey, "data", cmsData)
 		} else {
-			err = c.cache.Set(cacheKey, jsonData)
+			err = c.cache.Set(ctx, cacheKey, jsonData)
 			if err != nil {
 				slog.Error("cache set error", "err", err, "key", cacheKey, "data", string(jsonData))
 			}
@@ -167,27 +158,23 @@ func (c *Client) Request(page string, version string, language string) (map[stri
 	return cmsData, err
 }
 
-func (c *Client) RequestSimpleBlocksWithID(page string, version string, language string) (map[string]map[string]any, error) {
+func (c *Client) RequestSimpleBlocksWithID(ctx context.Context, page string, version string, language string) (map[string]map[string]any, error) {
 	cacheKey := c.CacheKey("i", page, version, language)
 
 	// Cache - Read
 	if c.cache != nil && version != c.versionWhereCacheIgnored {
-		obj, cacheErr := c.cache.Get(cacheKey)
+		obj, cacheErr := c.cache.Get(ctx, cacheKey)
 		if cacheErr != nil {
 			slog.Warn("storyblok", "cache.Get error", "url_params", cacheKey, "err", cacheErr)
 		} else {
 			if obj != nil {
-				jsonFromCache, ok := obj.([]byte)
-				if ok {
-					resp := map[string]map[string]any{}
-					err := json.Unmarshal(jsonFromCache, &resp)
-					if err != nil {
-						slog.Error("storyblok", "cache object not map[string]interface{}", "url_params", cacheKey, "obj", obj)
-					} else {
-						return resp, nil
-					}
+				resp := map[string]map[string]any{}
+				err := json.Unmarshal(obj, &resp)
+				if err != nil {
+					slog.Error("storyblok", "cache object not map[string]map[string]any{}", "url_params", cacheKey, "obj", obj)
+				} else {
+					return resp, nil
 				}
-				slog.Warn("storyblok", "cache object not map[string]interface{}", "url_params", cacheKey, "obj", obj)
 			}
 		}
 	}
@@ -202,7 +189,8 @@ func (c *Client) RequestSimpleBlocksWithID(page string, version string, language
 		Rels:  []interface{}{},
 		Links: []interface{}{},
 	}
-	jsonResp, err := c.RequestJSON(page, version, language)
+
+	jsonResp, err := c.RequestJSON(ctx, page, version, language)
 	if err != nil {
 		return nil, fmt.Errorf("headless_cms: %s: request_json: %w", cacheKey, err)
 	}
@@ -226,7 +214,7 @@ func (c *Client) RequestSimpleBlocksWithID(page string, version string, language
 		if err != nil {
 			slog.Error("json marshal", "err", err, "key", cacheKey, "data", cmsData)
 		} else {
-			err = c.cache.Set(cacheKey, jsonData)
+			err = c.cache.Set(ctx, cacheKey, jsonData)
 			if err != nil {
 				slog.Error("cache set error", "err", err, "key", cacheKey, "data", string(jsonData))
 			}
