@@ -4,6 +4,7 @@ import "context"
 
 type Client interface {
 	EmptyCache(ctx context.Context, user_input_token string) error
+	EmptyCacheToken(ctx context.Context) (string, error)
 
 	Request(ctx context.Context, page string, version string, language string) (map[string]any, error)
 	RequestJSON(ctx context.Context, page string, version string, language string) ([]byte, error)

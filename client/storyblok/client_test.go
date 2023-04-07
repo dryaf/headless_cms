@@ -140,6 +140,20 @@ func TestRequestJSON(t *testing.T) {
 	cache.AssertExpectations(t)
 	mockHTTPClient.AssertExpectations(t)
 }
+func TestEmptyCacheToken(t *testing.T) {
+	token := "cms_auth_token"
+	expectedToken := "empty_cache_token"
+
+	cache := &MockCache{}
+	mockHTTPClient := &MockHTTPClient{}
+
+	// Test with valid cache action token
+
+	client := storyblok.NewClient(token, expectedToken, cache, mockHTTPClient)
+	actualToken, err := client.EmptyCacheToken()
+	assert.Equal(t, expectedToken, actualToken)
+	assert.Nil(t, err)
+}
 
 func TestRequestJSONCache(t *testing.T) {
 	token := "test_token"

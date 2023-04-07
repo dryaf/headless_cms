@@ -63,8 +63,11 @@ func (c *Client) EmptyCache(ctx context.Context, user_input_token string) error 
 	return c.cache.Empty(ctx)
 }
 
-func (c *Client) EmptyCacheToken() string {
-	return c.cacheEmptyActionToken
+func (c *Client) EmptyCacheToken() (string, error) {
+	if c.cacheEmptyActionToken == "" {
+		return "", errors.New("token not set")
+	}
+	return c.cacheEmptyActionToken, nil
 }
 
 // RequestJSON story for example /login or "" for getting all stories
@@ -83,7 +86,7 @@ func (c *Client) RequestJSON(ctx context.Context, page string, version string, l
 	}
 
 	// Remote CMS
-	reqURL := c.cmsAPIUrl + c.URLParams(page, version, language) + "&token=" + c.cmsAuthToken
+	reqURL := c.cmsAPIUrl + c.cmsURLParams(page, version, language) + "&token=" + c.cmsAuthToken
 	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("headless_cms: %s: %w", reqURL, err)
@@ -227,7 +230,7 @@ func (c *Client) CacheKey(prefix, page, version, language string) string {
 	return fmt.Sprint(prefix, ":", version, ":", language, ":", page)
 }
 
-func (c *Client) URLParams(page, version, language string) string {
+func (c *Client) cmsURLParams(page, version, language string) string {
 	if page != "" {
 		page = "/" + page
 	}
