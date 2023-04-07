@@ -11,7 +11,6 @@ import (
 	"golang.org/x/exp/slog"
 
 	"github.com/dryaf/headless_cms"
-	"github.com/dryaf/headless_cms/client/storyblok/models"
 )
 
 type HTTPClient interface {
@@ -101,7 +100,7 @@ func (c *Client) RequestJSON(page string, version string, language string) ([]by
 	if err != nil {
 		return nil, fmt.Errorf("headless_cms: %s: resp: %w", reqURL, err)
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("headless_cms: %s: status: %d err: %w", reqURL, resp.StatusCode, errors.New(storyblokStatusDescriptions[resp.StatusCode]))
 	}
 
@@ -193,14 +192,13 @@ func (c *Client) RequestSimpleBlocksWithID(page string, version string, language
 		}
 	}
 
-	cmsData := &models.SimpleBlockskWithID{
-		Story: models.Story{
-			Content:          models.Content{},
-			TagList:          []interface{}{},
-			FirstPublishedAt: time.Time{},
-			Alternates:       []interface{}{},
+	// Remote CMS
+	cmsData := &SimpleBlockskWithID{
+		Story: Story{
+			Content:    Content{},
+			TagList:    []interface{}{},
+			Alternates: []interface{}{},
 		},
-		Cv:    0,
 		Rels:  []interface{}{},
 		Links: []interface{}{},
 	}
@@ -267,4 +265,42 @@ var storyblokStatusDescriptions = map[int]string{
 	502: "Server Errors	Something went wrong on Storyblok's end. (These are rare.)",
 	503: "Server Errors	Something went wrong on Storyblok's end. (These are rare.)",
 	504: "Server Errors	Something went wrong on Storyblok's end. (These are rare.)",
+}
+
+type SimpleBlockskWithID struct {
+	Story Story         `json:"story"`
+	Cv    int           `json:"cv"`
+	Rels  []interface{} `json:"rels"`
+	Links []interface{} `json:"links"`
+}
+
+type Story struct {
+	Name             string        `json:"name"`
+	CreatedAt        time.Time     `json:"created_at"`
+	PublishedAt      time.Time     `json:"published_at"`
+	ID               int           `json:"id"`
+	UUID             string        `json:"uuid"`
+	Content          Content       `json:"content"`
+	Slug             string        `json:"slug"`
+	FullSlug         string        `json:"full_slug"`
+	SortByDate       interface{}   `json:"sort_by_date"`
+	Position         int           `json:"position"`
+	TagList          []interface{} `json:"tag_list"`
+	IsStartpage      bool          `json:"is_startpage"`
+	ParentID         interface{}   `json:"parent_id"`
+	MetaData         interface{}   `json:"meta_data"`
+	GroupID          string        `json:"group_id"`
+	FirstPublishedAt time.Time     `json:"first_published_at"`
+	ReleaseID        interface{}   `json:"release_id"`
+	Lang             string        `json:"lang"`
+	Path             interface{}   `json:"path"`
+	Alternates       []interface{} `json:"alternates"`
+	DefaultFullSlug  interface{}   `json:"default_full_slug"`
+	TranslatedSlugs  interface{}   `json:"translated_slugs"`
+}
+
+type Content struct {
+	UID       string           `json:"_uid"`
+	Body      []map[string]any `json:"body"`
+	Component string           `json:"component"`
 }

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/dryaf/headless_cms/client/storyblok"
-	"github.com/dryaf/headless_cms/client/storyblok/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -240,9 +239,9 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 		},
 	}
 
-	sampleCMSData := models.SimpleBlockskWithID{
-		Story: models.Story{
-			Content: models.Content{
+	sampleCMSData := storyblok.SimpleBlockskWithID{
+		Story: storyblok.Story{
+			Content: storyblok.Content{
 				Body: sampleBlocks,
 			},
 		},
@@ -270,8 +269,8 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 	mockHTTPClient.AssertExpectations(t)
 
 	// Test cache hit
+	cache.ExpectedCalls = nil
 	respJson, _ := json.Marshal(resp)
-
 	cache.On("Get", "i:published:en:login").Return(respJson, nil)
 	resp, err = client.RequestSimpleBlocksWithID(page, version, language)
 	assert.Nil(t, err)
@@ -286,7 +285,11 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 	mockHTTPClient.AssertExpectations(t)
 
 	// Test error case
+	cache.ExpectedCalls = nil
 	cache.On("Get", "i:published:en:login").Return(nil, errors.New("cache miss"))
+	cache.On("Get", "j:published:en:login").Return(nil, errors.New("cache miss"))
+	cache.On("Set", "j:published:en:login", mock.Anything).Return(nil)
+	cache.On("Set", "i:published:en:login", mock.Anything).Return(nil)
 	mockHTTPClient.On("Do", mock.Anything).Return(httpResponse(http.StatusInternalServerError, nil), nil)
 
 	resp, err = client.RequestSimpleBlocksWithID(page, version, language)
