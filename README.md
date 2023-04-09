@@ -2,21 +2,23 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/dryaf/headless_cms?style=flat-square)](https://goreportcard.com/report/github.com/dryaf/headless_cms)
 [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/dryaf/headless_cms?tab=doc)
 
+# Headless CMS Go Client 
 
-# headless_cms
+A Go client for the Storyblok Headless CMS API.
 
-
-## What is it about?
-
-This allows you to use a headless cms service like storyblok in your go templates.
-It's very comfortable technique.
-
-use it together with github.com/dryaf/templates
+Implemented SaaS providers:
+[x] storyblok.com
+[ ] contentful.com
 
 
+## Features
 
-## Todos
-[ ] write better docs
-[ ] writte sample code with templates
- 
-## License MIT
+- Fetches data from Storyblok API
+- Caching support for fetched data (in memory or redis)
+- Request storyblok data in JSON or map[string]any format for complete website generation 
+(see d_block in github.com/dryaf/templates)
+- Requests storyblok data as map[string]map[string]any format where storyblok blocks need to contain an id so then can be accessed in go templates via .Texts.id.value (for simple i18n support in non dynamicly rendered pages)
+- Empty cache with a Token triggered via a webhook by the headless cms provider
+
+## License
+MIT

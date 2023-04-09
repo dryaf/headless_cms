@@ -3,7 +3,7 @@ package headless_cms
 import "context"
 
 type Client interface {
-	EmptyCache(ctx context.Context, user_input_token string) error
+	EmptyCache(ctx context.Context, emptyCacheToken string) error
 	EmptyCacheToken(ctx context.Context) (string, error)
 
 	Request(ctx context.Context, page string, version string, language string) (map[string]any, error)
