@@ -1,9 +1,6 @@
 [![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/dryaf/headless_cms/master/LICENSE)
-
 [![Coverage](https://img.shields.io/badge/coverage-88.0%25-green)](https://img.shields.io/badge/coverage-88.0%25-green)
-
 [![Go Report Card](https://goreportcard.com/badge/github.com/dryaf/headless_cms?style=flat-square)](https://goreportcard.com/report/github.com/dryaf/headless_cms)
-
 [![GoDoc](https://godoc.org/github.com/dryaf/headless_cms?status.svg)](https://godoc.org/github.com/dryaf/headless_cms)
 
 
