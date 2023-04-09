@@ -16,6 +16,7 @@ import (
 	"github.com/dryaf/headless_cms/client/storyblok"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 type MockCache struct {
@@ -53,6 +54,13 @@ type MockHTTPClient struct {
 func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	args := m.Called(req)
 	return args.Get(0).(*http.Response), args.Error(1)
+}
+
+func httpResponse(statusCode int, body []byte) *http.Response {
+	return &http.Response{
+		StatusCode: statusCode,
+		Body:       ioutil.NopCloser(bytes.NewReader(body)),
+	}
 }
 
 func getRedisCacheForTests() headless_cms.Cache {
@@ -261,7 +269,6 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 	cache := &MockCache{}
 	mockHTTPClient := &MockHTTPClient{}
 	ctx := context.TODO()
-
 	client := storyblok.NewClient(token, emptyCacheToken, cache, mockHTTPClient)
 
 	page := "login"
@@ -423,9 +430,138 @@ func TestRequestSimpleBlocksWithIDRedis(t *testing.T) {
 	mockHTTPClient.AssertExpectations(t)
 }
 
-func httpResponse(statusCode int, body []byte) *http.Response {
-	return &http.Response{
-		StatusCode: statusCode,
-		Body:       ioutil.NopCloser(bytes.NewReader(body)),
-	}
+func TestClient_Request(t *testing.T) {
+	token := "test_token"
+	emptyCacheToken := "empty_cache_token"
+	mockCache := &MockCache{}
+	mockHTTPClient := &MockHTTPClient{}
+
+	client := storyblok.NewClient(token, emptyCacheToken, mockCache, mockHTTPClient)
+
+	t.Run("successful request", func(t *testing.T) {
+		ctx := context.Background()
+		page := "login"
+		version := "published"
+		language := "en"
+		mockCache.ExpectedCalls = nil
+		mockHTTPClient.ExpectedCalls = nil
+
+		mockHTTPClient.On("Do", mock.AnythingOfType("*http.Request")).Return(
+			httpResponse(http.StatusOK, []byte(`
+			{
+				"content": "test content", 
+			 	"node": { 
+					"name": "node 1", 
+					"node": { 
+						"name": "node 2", 
+						"bool": true, 
+						"age": 18
+				    }
+				}
+			}
+			`)), nil,
+		)
+
+		mockCache.On("Get", "r:published:en:login").Return(nil, errors.New("cache miss"))
+		mockCache.On("Get", "j:published:en:login").Return(nil, errors.New("cache miss"))
+		mockCache.On("Set", "j:published:en:login", mock.Anything).Return(nil)
+		mockCache.On("Set", "r:published:en:login", mock.Anything).Return(nil)
+
+		resp, err := client.Request(ctx, page, version, language)
+		require.NoError(t, err)
+
+		expectedResp := map[string]any{
+			"content": "test content",
+			"node": map[string]any{
+				"name": "node 1",
+				"node": map[string]any{
+					"name": "node 2",
+					"bool": true,
+					"age":  float64(18),
+				},
+			},
+		}
+		assert.Equal(t, expectedResp, resp)
+	})
+
+	t.Run("error from HTTP client", func(t *testing.T) {
+		ctx := context.Background()
+		page := "login"
+		version := "published"
+		language := "en"
+		mockCache.ExpectedCalls = nil
+		mockHTTPClient.ExpectedCalls = nil
+
+		mockHTTPClient.On("Do", mock.AnythingOfType("*http.Request")).Return(
+			(*http.Response)(nil), errors.New("HTTP client error"),
+		)
+
+		mockCache.On("Get", "r:published:en:login").Return(nil, errors.New("cache miss"))
+		mockCache.On("Get", "j:published:en:login").Return(nil, errors.New("cache miss"))
+
+		_, err := client.Request(ctx, page, version, language)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "HTTP client error")
+	})
+
+	t.Run("error status code", func(t *testing.T) {
+		ctx := context.Background()
+		page := "login"
+		version := "published"
+		language := "en"
+		mockCache.ExpectedCalls = nil
+		mockHTTPClient.ExpectedCalls = nil
+
+		mockHTTPClient.On("Do", mock.AnythingOfType("*http.Request")).Return(
+			httpResponse(http.StatusInternalServerError, []byte("Internal Server Error")), nil,
+		)
+
+		mockCache.On("Get", "r:published:en:login").Return(nil, errors.New("cache miss"))
+		mockCache.On("Get", "j:published:en:login").Return(nil, errors.New("cache miss"))
+
+		_, err := client.Request(ctx, page, version, language)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Server Errors")
+		assert.Contains(t, err.Error(), "500")
+	})
+
+	t.Run("invalid JSON response", func(t *testing.T) {
+		ctx := context.Background()
+		page := "login"
+		version := "published"
+		language := "en"
+		mockCache.ExpectedCalls = nil
+		mockHTTPClient.ExpectedCalls = nil
+
+		mockHTTPClient.On("Do", mock.AnythingOfType("*http.Request")).Return(
+			httpResponse(http.StatusOK, []byte("invalid JSON")), nil,
+		)
+
+		mockCache.On("Get", "r:published:en:login").Return(nil, errors.New("cache miss"))
+		mockCache.On("Get", "j:published:en:login").Return(nil, errors.New("cache miss"))
+		mockCache.On("Set", "j:published:en:login", mock.Anything).Return(nil)
+
+		_, err := client.Request(ctx, page, version, language)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid character")
+	})
+
+	t.Run("data in cache", func(t *testing.T) {
+		ctx := context.Background()
+		page := "example"
+		version := "published"
+		language := "en"
+		mockCache.ExpectedCalls = nil
+		mockHTTPClient.ExpectedCalls = nil
+
+		mockCache.On("Get", mock.Anything).Return([]byte(`{"content": "cached content"}`), nil)
+
+		resp, err := client.Request(ctx, page, version, language)
+		require.NoError(t, err)
+
+		expectedResp := map[string]any{
+			"content": "cached content",
+		}
+		assert.Equal(t, expectedResp, resp)
+	})
 }
