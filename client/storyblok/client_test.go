@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -59,7 +59,7 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 func httpResponse(statusCode int, body []byte) *http.Response {
 	return &http.Response{
 		StatusCode: statusCode,
-		Body:       ioutil.NopCloser(bytes.NewReader(body)),
+		Body:       io.NopCloser(bytes.NewReader(body)),
 	}
 }
 
@@ -135,7 +135,7 @@ func TestRequestJSON(t *testing.T) {
 
 	mockResp := &http.Response{
 		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"test": "data"}`))),
+		Body:       io.NopCloser(bytes.NewReader([]byte(`{"test": "data"}`))),
 	}
 	cache.On("Get", "j:published:en:login").Return(nil, nil)
 	mockHTTPClient.On("Do", mock.Anything).Return(mockResp, nil)
@@ -200,7 +200,7 @@ func TestRequestJSONCachingInDraft(t *testing.T) {
 	client.HttpClient = mockHTTPClient
 	httpResponse := &http.Response{
 		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"test": "data"}`))),
+		Body:       io.NopCloser(bytes.NewReader([]byte(`{"test": "data"}`))),
 	}
 	mockHTTPClient.On("Do", mock.AnythingOfType("*http.Request")).Return(httpResponse, nil)
 
@@ -232,7 +232,7 @@ func TestRequestJSONError(t *testing.T) {
 
 	mockResp := &http.Response{
 		StatusCode: 500,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"error": "Server error"}`))),
+		Body:       io.NopCloser(bytes.NewReader([]byte(`{"error": "Server error"}`))),
 	}
 
 	mockHTTPClient.On("Do", mock.Anything).Return(mockResp, nil)
