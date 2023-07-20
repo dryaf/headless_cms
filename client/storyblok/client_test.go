@@ -14,6 +14,8 @@ import (
 	"github.com/dryaf/headless_cms"
 	"github.com/dryaf/headless_cms/cache/redis_cache"
 	"github.com/dryaf/headless_cms/client/storyblok"
+	"github.com/redis/go-redis/v9"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -68,10 +70,11 @@ func getRedisCacheForTests() headless_cms.Cache {
 
 	if useRealRedis {
 		// Replace the values below with your actual Redis settings
-		addr := "localhost:6379"
-		password := ""
-		db := 0
-		return redis_cache.New(addr, password, db)
+		redisAddrs := []string{os.Getenv("REDIS_ADDR")}
+		redisPassword := os.Getenv("REDIS_PASSWORD")
+		redisMasterName := os.Getenv("REDIS_MASTER_NAME")
+		redisDB := 0
+		return redis_cache.New(redis.NewUniversalClient(&redis.UniversalOptions{Addrs: redisAddrs, Password: redisPassword, DB: redisDB, MasterName: redisMasterName}))
 	}
 
 	return nil

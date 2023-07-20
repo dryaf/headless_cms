@@ -5,15 +5,18 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func TestCache_Get(t *testing.T) {
-	redisAddr := os.Getenv("REDIS_ADDR")
+	redisAddrs := []string{os.Getenv("REDIS_ADDR")}
 	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisMasterName := os.Getenv("REDIS_MASTER_NAME")
 	redisDB := 0
 
 	ctx := context.TODO()
-	c := New(redisAddr, redisPassword, redisDB)
+	c := New(redis.NewUniversalClient(&redis.UniversalOptions{Addrs: redisAddrs, Password: redisPassword, DB: redisDB, MasterName: redisMasterName}))
 
 	// Set key-value pairs in the cache
 	err := c.Set(ctx, "1", []byte("1"))

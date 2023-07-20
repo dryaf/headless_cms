@@ -9,26 +9,10 @@ import (
 )
 
 type Cache struct {
-	client *redis.Client
+	client redis.UniversalClient
 }
 
-func New(addr, password string, db int) headless_cms.Cache {
-	client := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
-	})
-
-	return &Cache{client: client}
-}
-
-func NewFailover(sentinelAddrs []string, masterName, password string, db int) headless_cms.Cache {
-	client := redis.NewFailoverClient(&redis.FailoverOptions{
-		MasterName:    masterName,
-		SentinelAddrs: sentinelAddrs,
-		Password:      password,
-		DB:            db,
-	})
+func New(client redis.UniversalClient) headless_cms.Cache {
 	return &Cache{client: client}
 }
 
