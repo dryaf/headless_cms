@@ -85,10 +85,10 @@ func TestNewClient(t *testing.T) {
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, &MockHTTPClient{})
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, &MockHTTPClient{})
 
 	assert.NotNil(t, client)
-	assert.Equal(t, token, client.Token())
+	assert.Equal(t, token, client.AuthToken())
 	assert.Equal(t, cache, client.Cache())
 }
 
@@ -96,9 +96,9 @@ func TestEmptyCache(t *testing.T) {
 	token := "test_token"
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
-	ctx := context.TODO()
+	ctx := context.Background()
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, &MockHTTPClient{})
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, &MockHTTPClient{})
 
 	cache.On("Empty").Return(nil)
 	err := client.EmptyCache(ctx, emptyCacheToken)
@@ -111,9 +111,9 @@ func TestEmptyCacheWrongToken(t *testing.T) {
 	token := "test_token"
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
-	ctx := context.TODO()
+	ctx := context.Background()
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, &MockHTTPClient{})
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, &MockHTTPClient{})
 
 	err := client.EmptyCache(ctx, "wrong_token")
 	assert.NotNil(t, err)
@@ -127,9 +127,9 @@ func TestRequestJSON(t *testing.T) {
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
 	mockHTTPClient := &MockHTTPClient{}
-	ctx := context.TODO()
+	ctx := context.Background()
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, &MockHTTPClient{})
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, mockHTTPClient)
 	client.HttpClient = mockHTTPClient
 
 	page := "login"
@@ -144,7 +144,7 @@ func TestRequestJSON(t *testing.T) {
 	mockHTTPClient.On("Do", mock.Anything).Return(mockResp, nil)
 	cache.On("Set", "j:published:en:login", []byte(`{"test": "data"}`)).Return(nil)
 
-	resp, err := client.RequestJSON(ctx, page, version, language)
+	resp, err := client.GetPageAsJSON(ctx, page, version, language)
 	assert.Nil(t, err)
 	assert.Equal(t, []byte(`{"test": "data"}`), resp)
 
@@ -156,12 +156,11 @@ func TestEmptyCacheToken(t *testing.T) {
 	expectedToken := "empty_cache_token"
 
 	cache := &MockCache{}
-	mockHTTPClient := &MockHTTPClient{}
 
 	// Test with valid cache action token
 
-	client := storyblok.NewClient(token, expectedToken, cache, mockHTTPClient)
-	actualToken, err := client.EmptyCacheToken()
+	client := storyblok.NewClient(context.Background(), token, expectedToken, cache, &MockHTTPClient{})
+	actualToken, err := client.EmptyCacheToken(context.Background())
 	assert.Equal(t, expectedToken, actualToken)
 	assert.Nil(t, err)
 }
@@ -171,9 +170,9 @@ func TestRequestJSONCache(t *testing.T) {
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
 	mockHTTPClient := &MockHTTPClient{}
-	ctx := context.TODO()
+	ctx := context.Background()
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, &MockHTTPClient{})
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, mockHTTPClient)
 	client.HttpClient = mockHTTPClient
 
 	page := "login"
@@ -184,7 +183,7 @@ func TestRequestJSONCache(t *testing.T) {
 
 	cache.On("Get", cacheKey).Return([]byte(`{"test": "data"}`), nil)
 
-	resp, err := client.RequestJSON(ctx, page, version, language)
+	resp, err := client.GetPageAsJSON(ctx, page, version, language)
 	assert.Nil(t, err)
 	assert.Equal(t, []byte(`{"test": "data"}`), resp)
 
@@ -197,9 +196,9 @@ func TestRequestJSONCachingInDraft(t *testing.T) {
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
 	mockHTTPClient := &MockHTTPClient{}
-	ctx := context.TODO()
+	ctx := context.Background()
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, &MockHTTPClient{})
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, mockHTTPClient)
 	client.HttpClient = mockHTTPClient
 	httpResponse := &http.Response{
 		StatusCode: 200,
@@ -211,7 +210,7 @@ func TestRequestJSONCachingInDraft(t *testing.T) {
 	version := "draft"
 	language := "en"
 
-	resp, err := client.RequestJSON(ctx, page, version, language)
+	resp, err := client.GetPageAsJSON(ctx, page, version, language)
 	assert.Nil(t, err)
 	assert.Equal(t, []byte(`{"test": "data"}`), resp)
 
@@ -224,9 +223,9 @@ func TestRequestJSONError(t *testing.T) {
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
 	mockHTTPClient := &MockHTTPClient{}
-	ctx := context.TODO()
+	ctx := context.Background()
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, &MockHTTPClient{})
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, mockHTTPClient)
 	client.HttpClient = mockHTTPClient
 
 	page := "login"
@@ -240,7 +239,7 @@ func TestRequestJSONError(t *testing.T) {
 
 	mockHTTPClient.On("Do", mock.Anything).Return(mockResp, nil)
 
-	resp, err := client.RequestJSON(ctx, page, version, language)
+	resp, err := client.GetPageAsJSON(ctx, page, version, language)
 	assert.NotNil(t, err)
 	assert.Nil(t, resp)
 
@@ -253,8 +252,9 @@ func TestGenerateKey(t *testing.T) {
 	token := "test_token"
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
+	mockHTTPClient := &MockHTTPClient{}
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, &MockHTTPClient{})
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, mockHTTPClient)
 
 	page := "login"
 	version := "draft"
@@ -271,8 +271,8 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 	emptyCacheToken := "empty_cache_token"
 	cache := &MockCache{}
 	mockHTTPClient := &MockHTTPClient{}
-	ctx := context.TODO()
-	client := storyblok.NewClient(token, emptyCacheToken, cache, mockHTTPClient)
+	ctx := context.Background()
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, mockHTTPClient)
 
 	page := "login"
 	version := "published"
@@ -310,7 +310,7 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 	cache.On("Set", "i:published:en:login", mock.Anything).Return(nil)
 	mockHTTPClient.On("Do", mock.Anything).Return(httpResponse(http.StatusOK, jsonData), nil)
 
-	resp, err := client.RequestSimpleBlocksWithID(ctx, page, version, language)
+	resp, err := client.GetPageAsSimpleBlocksWithID(ctx, page, version, language)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(resp))
 
@@ -326,7 +326,7 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 	cache.ExpectedCalls = nil
 	respJson, _ := json.Marshal(resp)
 	cache.On("Get", "i:published:en:login").Return(respJson, nil)
-	resp, err = client.RequestSimpleBlocksWithID(ctx, page, version, language)
+	resp, err = client.GetPageAsSimpleBlocksWithID(ctx, page, version, language)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(resp))
 
@@ -346,7 +346,7 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 	cache.On("Set", "i:published:en:login", mock.Anything).Return(nil)
 	mockHTTPClient.On("Do", mock.Anything).Return(httpResponse(http.StatusInternalServerError, nil), nil)
 
-	resp, err = client.RequestSimpleBlocksWithID(ctx, page, version, language)
+	resp, err = client.GetPageAsSimpleBlocksWithID(ctx, page, version, language)
 	assert.NotNil(t, err)
 	assert.Nil(t, resp)
 
@@ -355,7 +355,7 @@ func TestRequestSimpleBlocksWithID(t *testing.T) {
 }
 
 func TestRequestSimpleBlocksWithIDRedis(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	token := "test_token"
 	emptyCacheToken := "empty_cache_token"
 	cache := getRedisCacheForTests()
@@ -365,7 +365,7 @@ func TestRequestSimpleBlocksWithIDRedis(t *testing.T) {
 	cache.Empty(ctx)
 	mockHTTPClient := &MockHTTPClient{}
 
-	client := storyblok.NewClient(token, emptyCacheToken, cache, mockHTTPClient)
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, cache, mockHTTPClient)
 
 	page := "login"
 	version := "published"
@@ -399,7 +399,7 @@ func TestRequestSimpleBlocksWithIDRedis(t *testing.T) {
 	// Test cache miss and HTTP request
 	mockHTTPClient.On("Do", mock.Anything).Return(httpResponse(http.StatusOK, jsonData), nil)
 
-	resp, err := client.RequestSimpleBlocksWithID(ctx, page, version, language)
+	resp, err := client.GetPageAsSimpleBlocksWithID(ctx, page, version, language)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(resp))
 
@@ -412,7 +412,7 @@ func TestRequestSimpleBlocksWithIDRedis(t *testing.T) {
 
 	// Test cache hit
 
-	resp, err = client.RequestSimpleBlocksWithID(ctx, page, version, language)
+	resp, err = client.GetPageAsSimpleBlocksWithID(ctx, page, version, language)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(resp))
 
@@ -426,7 +426,7 @@ func TestRequestSimpleBlocksWithIDRedis(t *testing.T) {
 	// Test error case
 	mockHTTPClient.On("Do", mock.Anything).Return(httpResponse(http.StatusInternalServerError, nil), nil)
 	cache.Empty(ctx)
-	resp, err = client.RequestSimpleBlocksWithID(ctx, page, version, language)
+	resp, err = client.GetPageAsSimpleBlocksWithID(ctx, page, version, language)
 	assert.NotNil(t, err)
 	assert.Nil(t, resp)
 
@@ -439,7 +439,7 @@ func TestClient_Request(t *testing.T) {
 	mockCache := &MockCache{}
 	mockHTTPClient := &MockHTTPClient{}
 
-	client := storyblok.NewClient(token, emptyCacheToken, mockCache, mockHTTPClient)
+	client := storyblok.NewClient(context.Background(), token, emptyCacheToken, mockCache, mockHTTPClient)
 
 	t.Run("successful request", func(t *testing.T) {
 		ctx := context.Background()
@@ -470,7 +470,7 @@ func TestClient_Request(t *testing.T) {
 		mockCache.On("Set", "j:published:en:login", mock.Anything).Return(nil)
 		mockCache.On("Set", "r:published:en:login", mock.Anything).Return(nil)
 
-		resp, err := client.Request(ctx, page, version, language)
+		resp, err := client.GetPage(ctx, page, version, language)
 		require.NoError(t, err)
 
 		expectedResp := map[string]any{
@@ -502,7 +502,7 @@ func TestClient_Request(t *testing.T) {
 		mockCache.On("Get", "r:published:en:login").Return(nil, errors.New("cache miss"))
 		mockCache.On("Get", "j:published:en:login").Return(nil, errors.New("cache miss"))
 
-		_, err := client.Request(ctx, page, version, language)
+		_, err := client.GetPage(ctx, page, version, language)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "HTTP client error")
 	})
@@ -522,7 +522,7 @@ func TestClient_Request(t *testing.T) {
 		mockCache.On("Get", "r:published:en:login").Return(nil, errors.New("cache miss"))
 		mockCache.On("Get", "j:published:en:login").Return(nil, errors.New("cache miss"))
 
-		_, err := client.Request(ctx, page, version, language)
+		_, err := client.GetPage(ctx, page, version, language)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Server Errors")
 		assert.Contains(t, err.Error(), "500")
@@ -544,7 +544,7 @@ func TestClient_Request(t *testing.T) {
 		mockCache.On("Get", "j:published:en:login").Return(nil, errors.New("cache miss"))
 		mockCache.On("Set", "j:published:en:login", mock.Anything).Return(nil)
 
-		_, err := client.Request(ctx, page, version, language)
+		_, err := client.GetPage(ctx, page, version, language)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
 	})
@@ -559,7 +559,7 @@ func TestClient_Request(t *testing.T) {
 
 		mockCache.On("Get", mock.Anything).Return([]byte(`{"content": "cached content"}`), nil)
 
-		resp, err := client.Request(ctx, page, version, language)
+		resp, err := client.GetPage(ctx, page, version, language)
 		require.NoError(t, err)
 
 		expectedResp := map[string]any{

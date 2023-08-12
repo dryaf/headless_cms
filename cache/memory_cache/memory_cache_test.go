@@ -7,7 +7,7 @@ import (
 )
 
 func TestCache_Get(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	c := New()
 	err := c.Set(ctx, "1", []byte("1"))
 	if err != nil {

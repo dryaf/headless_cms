@@ -4,7 +4,11 @@ import (
 	"context"
 	"errors"
 	"sync"
+
+	"github.com/dryaf/headless_cms"
 )
+
+var _ headless_cms.Cache = &Cache{}
 
 type Cache struct {
 	mp   map[string]interface{}

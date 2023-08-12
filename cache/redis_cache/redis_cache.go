@@ -8,6 +8,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+var _ headless_cms.Cache = &Cache{}
+
 type Cache struct {
 	client redis.UniversalClient
 }

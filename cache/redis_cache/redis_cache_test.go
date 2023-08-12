@@ -15,7 +15,7 @@ func TestCache_Get(t *testing.T) {
 	redisMasterName := os.Getenv("REDIS_MASTER_NAME")
 	redisDB := 0
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	c := New(redis.NewUniversalClient(&redis.UniversalOptions{Addrs: redisAddrs, Password: redisPassword, DB: redisDB, MasterName: redisMasterName}))
 
 	// Set key-value pairs in the cache
